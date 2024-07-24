@@ -1,0 +1,34 @@
+bee	c_freq	z_freq	c_perf_fem	z_perf_fem	c_perf_masc	z_perf_masc
+Apis_mellifera	0,778	0	0,778	0,935	0,722	0
+Augochlora_sp, 05	0,444	-0,985	0,444	-0,935	0,444	-0,611
+Augochloropsis_sp, 49	0,408	1,071	0,653	0,770	0,612	1,069
+Augochloropsis_sp, 50	0,642	1,071	0,735	0,730	0,656	1,069
+Augochloropsis_sp, 51	0	-0,300	0,444	-0,385	0	0,229
+Augochloropsis_sp, 52	0,500	0,385	0,667	0,770	0,500	1,069
+Augochloropsis_sp, 53	0	-0,300	0	-0,385	0,444	-0,835
+Bombus_morio	0,640	1,069	0,50	0,730	0,720	-0,835
+Bombus_pauloensis	0,680	1,069	0,790	1,464	0,740	1,500
+Caenohalictus_sp, 01	0,688	0,385	0,640	0,935	0,719	1,113
+Centris_fuscata	0,667	-0,802	0	-0,586	0,500	-0,500
+Centris_tarsata	0,680	0	0,750	0	0,740	1,113
+Centris_trigonoides	0	-0,802	0	-0,586	0	0
+Ceratina_minima	0,500	0	0	-0,935	0,500	-0,835
+Dialictus_sp, 13	0,500	0	0	-0,935	0,500	-0,835
+Eufriesea_nigrohirta	0	-0,802	0	-0,586	0	0
+Exomalopsis_fulvofasciata	0,278	1,071	0,480	0,730	0,444	1,113
+Exomalopsis_tomentosa	0	-1,670	0,50	-1,095	0	-1,450
+Melipona_quinquefasciata	0,563	1,071	0,719	0,935	0,656	1,113
+Oxaea_sp, 01	0	-1,670	0	-1,095	0	-0,835
+Paratetrapedia_lineata	0,716	0	0,778	0	0,765	1,113
+Paratrigona_subnuda	0,750	0	0,781	0,935	0,750	-0,835
+Pseudaugochlora_flammula	0,500	0	0	-1,540	0,5	-0,835
+Pseudaugochlora_graminea	0,612	0,385	0,560	0,770	0,778	-0,611
+Ptiloglossa_sp,05	0	-1,670	0	-1,540	0	-1,450
+Tetragonisca_angustula	0	-0,802	0	-0,586	0	0
+Thectochlora_alaris	0,320	0,385	1,038	0,770	0,480	1,113
+Trigona_braueri	0	1,069	0	-0,586	0,500	0
+Trigona_spinipes	0,500	0	0,500	-0,935	0,500	0
+Xylocopa_fortuita	0,500	0	0,500	0	0,500	-0,500
+Xylocopa_hirsutissima	0,722	0	0,722	1,464	0,722	-0,611
+Xylocopa_subcyanea	0,612	0,385	0,667	0,770	0,571	1,069
+Xylocopa_truxali	0,500	0	0	0	0,500	-0,500
