@@ -1,0 +1,163 @@
+---
+title: "Plant-buzzpollinators networks"
+author: "Lorena Valadão & Pamela Santana"
+date: "`r format(Sys.time(), '%d de %B de %Y')`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+    self_contained: true
+    thumbnails: false
+    lightbox: true
+    gallery: false
+  pdf_document:
+    highlight: tango
+    toc: yes
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(ggplot2);library(lme4);library(DHARMa);library(MuMIn); library(glmmTMB)
+library(knitr);library(ggeffects)
+
+opts_chunk$set(fig.align = 'center', warning = FALSE, message = FALSE, error = FALSE, echo=T, cache=F)
+options(formatR.arrow = TRUE, width = 90, help_type = "html")
+```
+
+```{r}
+efic = read.csv2("1.RawData/dados_obs_grupos.csv", header = TRUE) #performance data
+str(efic)
+
+efic$ch_sp<-as.factor(efic$ch_sp)
+efic$bee_sp<-as.factor(efic$bee_sp)
+efic$id_flow<-as.factor(efic$id_flow)
+efic$func_group<-as.factor(efic$func_group)
+
+summary(log(efic$polen_expor))
+
+hist(efic$polen_expor)
+```
+
+```{r pollenExpo}
+interBeeChamExpo<-table(efic$func_group, efic$ch_sp)#we have a lot of zeros, what does make sense from the point of view of interaction, but makes a bit more trickier to fit the model, so either than using the interaction term, we can try only as additive.
+
+efic$polen_expor<-round(efic$polen_expor,0)
+##Models for pollen exportation##
+
+ex_m1<- glmmTMB(polen_expor~func_group*bee_sp+(1|ch_sp),  
+                family = nbinom2, data = efic)#very poor fitting of the model
+ex_m2 = glmmTMB(polen_expor~func_group+(1|ch_sp),  
+                family = nbinom2, data = efic) #very poor fitting of the model
+
+#trying to fit with hurdle model
+ex_m3 =  glmmTMB(polen_expor ~ func_group*bee_sp + (1|ch_sp),         
+                   ziformula = ~1,
+                   family = nbinom2, 
+                   dispformula = ~ func_group, #dispformula a one-sided formula for dispersion containing only fixed effects,
+                   data = efic)
+plot(simulateResiduals(ex_m3))
+
+#trying to fit with hurdle model
+ex_m4 = glmmTMB(polen_expor~func_group*bee_sp+(1|ch_sp), 
+                                 family = truncated_nbinom2, 
+                                 dispformula = ~func_group*bee_sp,
+                                 data = efic)
+plot(simulateResiduals(ex_m4))
+ex_m5 = glmmTMB(polen_expor~func_group+bee_sp+(1|ch_sp), 
+                                 ziformula = ~1, 
+                                 family = truncated_nbinom2, 
+                                 dispformula = ~bee_sp,
+                                 data = efic)
+plot(simulateResiduals(ex_m5))
+ex_m6 = glmmTMB(polen_expor~func_group+(1|ch_sp), 
+                                 #ziformula = ~1, 
+                                 family = truncated_nbinom2, 
+                                 dispformula = ~bee_sp,
+                                 data = efic)
+
+ex_m7 = glmmTMB(polen_expor~bee_sp+(1|ch_sp), 
+                                 ziformula = ~1, 
+                                 family = truncated_nbinom2, 
+                                 dispformula = ~bee_sp,
+                                 data = efic)
+plot(simulateResiduals(ex_m7))
+ex_m8 = glmmTMB(polen_expor~func_group+(1|ch_sp), 
+                                 ziformula = ~1, 
+                                 family = truncated_nbinom2, 
+                                 dispformula = ~bee_sp,
+                                 data = efic)
+plot(simulateResiduals(ex_m8))
+ex_m9 = glmmTMB(polen_expor~func_group+(1|ch_sp), 
+                                 #ziformula = ~1, 
+                                 family = truncated_nbinom2, 
+                                 dispformula = ~func_group+bee_sp+ch_sp,
+                                 data = efic)
+
+plot(simulateResiduals(ex_m9))
+plot(residuals(ex_m9), efic$func_group)#none of variables have a homogeneus distribution
+testCategorical(simulateResiduals(ex_m9), catPred = efic$func_group)
+
+# Verifying overdispersion
+testDispersion(simulateResiduals(ex_m9))
+
+#excluding a few species
+levels(efic$func_group)<-c("flow_buzz", "ant_buzz", "robber", "theft")
+efic_sub<-efic[efic$func_group!= "robber"|
+              efic$func_group!= "theft",]
+
+ex_m10 = glmmTMB(polen_expor~func_group+(1|ch_sp), 
+                                 #ziformula = ~1, 
+                                 family = truncated_nbinom2, 
+                                 dispformula = ~func_group*bee_sp+ch_sp,
+                                 data = efic_sub)
+
+plot(simulateResiduals(ex_m10))
+plot(simulateResiduals(ex_m4))
+
+ex_m<- MASS::glm.nb(polen_expor~1, data = efic)
+
+bbmle::AICctab(ex_m1, ex_m2, ex_m3, ex_m4, ex_m5, ex_m6,
+               ex_m7, ex_m8, ex_m9, ex_m10, ex_m, weights = T)
+
+MuMIn::AICc(ex_m5, ex_m3, ex_m9, ex_m)
+
+summary(ex_m3) #the best fit model indicates that there is an effect of the interaction between pollen exportation and bee species on pollen deposition for each chamaescrista species.
+
+predictions <- ggpredict(ex_m3, terms = "func_group")
+levels(predictions$x)<-c("flow_buzz", "ant_buzz", "robber", "theft")
+
+ggplot(predictions, aes(x = x, y = predicted))+ 
+    geom_errorbar(aes(x=x, ymin=conf.low, ymax=conf.high), width=.1, size=0.3, color="darkgrey")+ylim(0,35000)+
+    geom_point(aes(x=x, y=predicted, colour=x), size=4, shape=19)+
+    scale_colour_manual(values=c("#c85d00", "#ac00e8", "#e72881", "#1f8b7f"), guide="none")+
+    xlab("Functional group") + ylab("Pollen export") +
+  scale_x_discrete(labels=c("Flower buzz", "Anther buzz", "Robber", "Theft"))+
+  geom_text(label = c("a", "b", "c", "d"), aes(y = rep(34000,4), x = x), size = 4)+ theme(axis.text.x = element_text(size=12), axis.title.x = element_text(size=16), 
+        axis.text.y= element_text(size=12), axis.title.y = element_text(size=16))+theme_cowplot()
+
+# Plot usando ggplot2
+ggplot(predictions, aes(x = x, y = predicted, color = group)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2, color = NA) +
+  labs(x = "Functional Group", y = "Predicted Pollen Export") +
+  theme_minimal()
+
+# Alternativamente, use o método plot diretamente
+plot(predictions)
+```
+
+```{r}
+###Boxplot of pollen export per bee species
+efic$bee_sp <- reorder(efic$bee_sp, efic$polen_expor, FUN = mean)
+par(mfrow=c(2,1))
+
+ggplot(efic, aes(x=bee_sp, y=polen_expor, fill=func_group)) +
+  geom_boxplot(width=0.4,lwd=0.75, alpha=0.5)+
+  scale_fill_manual(values=c("#c85d00", "#ac00e8", "#e72881", "#1f8b7f"), guide="none")+
+  xlab("Bee species") + ylab("Pollen export") +
+  facet_grid(~func_group, scales = "free", space = "free_x") + theme_bw()+
+  theme(axis.text.x = element_text(size=9, angle = 90), 
+        axis.title.x = element_text(size=16), 
+        axis.text.y= element_text(size=12), axis.title.y = element_text(size=16),
+        theme(legend.position= "none"))
+
+```
