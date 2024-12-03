@@ -1,4 +1,6 @@
 library("cowplot")
+library("ggplot2")
+library(dplyr)
 
 efic = read.csv2("1.RawData/dados_obs_grupos.csv", header = TRUE) #dados 
 q1<-efic$polen_depo
@@ -37,7 +39,7 @@ myylab="Pollen exportation (log)"
         ## Define line breaks ##
         ## other alternatives, see ?classIntervals
 lines.breaks = "quantile"
-nlines = 5
+nlines = 4
 
         lbreaks <- classInt::classIntervals(df$z, n = nlines + 1, 
                                                 style = lines.breaks)$brks
@@ -79,7 +81,7 @@ nlines = 5
     exp$sd_exp_log<-sd_exp_log$x
     #unique(efic$bee_sp)
     
-    library(dplyr)
+   
     efic_unique <- efic |>
         distinct(bee_sp, .keep_all = TRUE)
     
@@ -93,14 +95,14 @@ nlines = 5
         effplot + 
         geom_errorbar(aes(x=mean_depo, y=mean_exp_log, ymin=mean_exp_log-sd_exp_log, ymax=mean_exp_log+sd_exp_log), color="black", width=.3, linewidth=1, data=exp)+
         geom_errorbarh(aes( y=mean_exp_log, x=mean_depo, xmin = mean_depo - sd_depo, xmax = mean_depo + sd_depo), height = 0.2, color="black",data=exp)+
-        scale_colour_manual(values=c("#c85d00", "#ac00e8", "#e72881", "#1f8b7f")) +
+        scale_colour_manual(values=c("#e72881","#ac00e8", "#1f8b7f", "#c85d00")) +
         geom_point(aes(x=mean_depo, y=mean_exp_log, fill=exp$func_group, colour=exp$func_group),
                    alpha=0.8,
                    color = "black",
                    stroke = 1,
                    shape = 21,
                    size = 4,
-                   data=exp)+
+                   data=exp)+xlim(0, 60)+ylim(0, 12)+
         labs(x="Mean pollen deposition", y = "Mean pollen export(Log)")+
         theme(text = element_text(size = 16)) + theme(axis.text.x=element_text(hjust = 1))+ theme(axis.title = element_text(size = 15))+theme(axis.text.x = element_text(size = 12))+theme_cowplot()
         #+ geom_text_repel(aes(x=mean_depo, y=mean_exp_log), size = label.size, label = exp$func_group, data = exp, nudge_y = 0.5, segment.size = 0.2, segment.alpha = 0.75)
