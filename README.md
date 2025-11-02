@@ -37,15 +37,13 @@ analysis and visualization of results. The code is written in R language.
 The script sequence to reproduce the workflow is indicated by the numbers at
 the beginning of the name of the script file
 
-- `0_data_summary.Rmd` initial data exploration
+- `1_analysis_Demo.Rmd` analysis to investigate the patterns of pollen deposition by distinct pollinators on different _Chamaecrista_ species, grouped by functional roles. Then, plot the network using only pollen deposition as interaction currency.
 
-- `1_analysis_Demo.Rmd` analysis to investigate the patterns of pollen deposition by distinct pollinators on different _Chamaecrista_ species.
-
-- `2_analysis_Expo.Rmd` analysis to investigate the patterns of pollen exportation (how many pollen grains were taken from the anthers after a visit) by distinct pollinators on different _Chamaecrista_ species.
+- `2_analysis_Expo.Rmd` analysis to investigate the patterns of pollen exportation (how many pollen grains were taken from the anthers after a visit) by distinct pollinators on different _Chamaecrista_ species, grouped by functional roles. Then, plot the network using only pollen export as interaction currency.
 
 - `3_analysis_DepoExpoRation.qmd` comparison of the relation between pollen deposition and pollen exportation for the pairwise interactions between pollinators and _Chamaecrista_ species. Pollinators were classified into functional groups to facilitate interpretation.
 
-- `4_networks.R` code to generate the networks based on visitation frequency, pollen deposition and pollen exportation.
+- `4_networks.R` code to generate the networks based on visitation frequency, pollen deposition, female perfomance (pollen deposition multiplied by frequency), pollen exportation and male perfomance (pollen export multiplied by frequency). In this script, we also calculated network metrics to compare the structure of distinct networks.
 
 - `5_cz_species_role.R` code used to compare species role in the distinct networks using C&Z metrics.
 
