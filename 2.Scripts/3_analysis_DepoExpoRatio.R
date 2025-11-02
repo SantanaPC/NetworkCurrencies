@@ -1,6 +1,7 @@
 library("cowplot")
 library("ggplot2")
 library(dplyr)
+library(ggrepel)
 
 efic = read.csv2("1.RawData/dados_obs_grupos.csv", header = TRUE) #dados 
 q1<-efic$polen_depo
@@ -18,8 +19,6 @@ myylab="Pollen exportation (log)"
         theme_bw() +
         labs(x = myxlab, y = myylab) +
         theme(legend.title = element_blank())
-    
-    
     
     ##### Plotting contour lines ####
     q1.error <- sd(q1)
@@ -80,7 +79,6 @@ nlines = 4
     exp$mean_exp_log<-mean_exp_log$x
     exp$sd_exp_log<-sd_exp_log$x
     #unique(efic$bee_sp)
-    
    
     efic_unique <- efic |>
         distinct(bee_sp, .keep_all = TRUE)
@@ -88,14 +86,14 @@ nlines = 4
     comb <- left_join(exp, efic_unique, by = "bee_sp")
     exp$func_group<-comb$func_group
     exp$func_group<-as.factor(exp$func_group)
-    levels(exp$func_group)<-c("flow_buzz", "ant_buzz", "robber", "theft")
-    
+    levels(exp$func_group)
+    #levels(exp$func_group)<-c("flow_buzz", "ant_buzz", "robber", "theft")
     #length(exp$mean_exp_log)
-      
-        effplot + 
+    
+    effplot + 
         geom_errorbar(aes(x=mean_depo, y=mean_exp_log, ymin=mean_exp_log-sd_exp_log, ymax=mean_exp_log+sd_exp_log), color="black", width=.3, linewidth=1, data=exp)+
         geom_errorbarh(aes( y=mean_exp_log, x=mean_depo, xmin = mean_depo - sd_depo, xmax = mean_depo + sd_depo), height = 0.2, color="black",data=exp)+
-        scale_colour_manual(values=c("#e72881","#ac00e8", "#1f8b7f", "#c85d00")) +
+        scale_colour_manual(values=c("#63077D","#e72881","#1C796F", "#FF6A00")) +
         geom_point(aes(x=mean_depo, y=mean_exp_log, fill=exp$func_group, colour=exp$func_group),
                    alpha=0.8,
                    color = "black",
@@ -105,5 +103,24 @@ nlines = 4
                    data=exp)+xlim(0, 60)+ylim(0, 12)+
         labs(x="Mean pollen deposition", y = "Mean pollen export(Log)")+
         theme(text = element_text(size = 16)) + theme(axis.text.x=element_text(hjust = 1))+ theme(axis.title = element_text(size = 15))+theme(axis.text.x = element_text(size = 12))+theme_cowplot()
-        #+ geom_text_repel(aes(x=mean_depo, y=mean_exp_log), size = label.size, label = exp$func_group, data = exp, nudge_y = 0.5, segment.size = 0.2, segment.alpha = 0.75)
+#         geom_text_repel(aes(x=mean_depo, y=mean_exp_log), size = label.size, label = exp$func_group, data = exp, nudge_y = 0.5, segment.size = 0.2, segment.alpha = 0.75)
 
+    ###################Graph for the paper#####################
+    
+        ggplot(exp)+
+          geom_errorbar(aes(x=mean_depo, ymin=mean_exp_log-sd_exp_log, ymax=mean_exp_log+sd_exp_log, color=func_group),width=.5, size=0.4, alpha = 0.6)+
+          geom_errorbarh(aes(y=mean_exp_log, xmin=mean_depo-sd_depo, xmax=mean_depo+sd_depo, color=func_group), height=.2, size=0.4, alpha = 0.6) + 
+          geom_point(aes(x=mean_depo, y=mean_exp_log, color=func_group, shape = func_group),
+        #alpha=0.8,
+        stroke = 1,
+        size = 2)+xlim(0, 60)+ylim(0, 12)+
+          #theme_bw()+
+          labs(x="Mean pollen deposition", y = "Mean pollen removal (Log)")+
+          scale_colour_manual(values=c("#63077D","#e72881", "#1C796F", "#FF6A00")) +
+          theme(legend.position = "none")+theme(text = element_text(size = 16)) + 
+          theme(axis.text.x=element_text(hjust = 1)) +
+          theme(axis.title = element_text(size = 15))+
+          theme(axis.text.x = element_text(size = 12))+
+          theme_cowplot()
+        
+        
