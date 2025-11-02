@@ -11,7 +11,18 @@ In this study, we evaluate how the currencies used to build ecological networks 
 ## 1.RawData
 
 This folder stores raw and processed data used to perform all the
-analysis presented in this study
+analysis presented in this study.
+
+- `dados_obs_group.csv` a data frame containing the `id_exp` id of the pollinator; `id_flow` id of the plant species; `polen_expor` the total amount of pollen exportation; `polen_depo` the total of pollen deposition; `bee_sp` the pollinator species; `ch_sp` the plant species; `func_group` the functional group of the pollinator.
+
+- `rede_frequencia.csv` a data frame containing all species and the frequency of visits of each pollinator species to each plant species.
+
+- `rede_deposicao3.csv` a data frame containing all species and the total amount of pollen deposited on the stigma by each pollinator species to each plant species.
+
+- `rede_remocao7.txt` a data frame containing all species and the total amount of pollen removed from the anthers by each pollinator species after a visit to a plant species.
+
+- `rede_eficacia_f.csv` a data frame containing all species and the total amount of pollen deposited multiplied by the frequency of each pollinator visiting each plant species.
+
 
 ## 2.Scripts
 

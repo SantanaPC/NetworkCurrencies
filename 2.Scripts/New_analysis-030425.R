@@ -1,5 +1,6 @@
-setwd("C:/Users/loren/OneDrive/Desktop/Doutorado/projeto/planilhas/analises/planilhas_certas")
+setwd("D:/Doutorado/projeto/planilhas/analises/planilhas_certas")
 dir()
+
 
 library(ggplot2)
 library(lme4)
@@ -152,7 +153,7 @@ ggplot(exp)+
   geom_errorbarh(aes(y=mean_exp_log, xmin=mean_depo-sd_depo, xmax=mean_depo+sd_depo, color=func_group), size=0.5, alpha = 0.5) + 
   geom_point(aes(x=mean_depo, y=mean_exp_log, color=func_group), size = 2, shape = 16, )+ 
   xlim(-1,5)+ ylim(0,10.5)+
-    theme_bw() +
+  theme_bw() +
   labs(x="Mean pollen deposition", y = "Mean pollen exportarion (log)")+
   theme(legend.position= "none")+theme(text = element_text(size = 16)) + theme(axis.text.x=element_text(hjust = 1)) +
   theme(axis.title = element_text(size = 15))+theme(axis.text.x = element_text(size = 12))
@@ -175,12 +176,12 @@ dev.off()
 #########################################################################
 ##Analises de rede#######################################################
 
+install.packages("bipartite")
 library(bipartite)
 library(iNEXT)
 library(vegan)
 library(ggplot2)
 library(igraph)
-
 
 rede_freq = read.csv2("rede_frequencia.csv", header = TRUE, row.names = 1) #medida de frequencia = intera??o total da especie de abelha na especie de planta, aqui s? tem as especies de plantas/abelhas que foram estimadas quanto a deposi??o de polen 
 
@@ -196,8 +197,10 @@ colnames(rede_freq)
 rownames(rede_freq)
 colnames(rede_deposicao)
 rownames(rede_deposicao)
-colnames(rede_eficacia_f)
-rownames(rede_eficacia_f)
+colnames(rede_performace_f)
+rownames(rede_performace_f)
+colnames(rede_performace_m)
+rownames(rede_performace_m)
 
 #Visualizando
 #REDE FREQ PARCIAL#
@@ -242,35 +245,66 @@ networklevel(rede_performace_f, index="connectance")
 #EFICACIA M#
 networklevel(rede_performace_m, index="connectance")
 
-#Especiliza??o
+#Especilizacao
 #FREQ#
-networklevel(rede_freq, index="H2")
-
-#DEP#
-networklevel(rede_deposicao, index="H2")
-
-#REM#
-networklevel(rede_remocao, index="H2")
+H2_freq = networklevel(rede_freq, index="H2")
 
 #EFI#
-networklevel(rede_performace_f, index="H2")
+H2_f = networklevel(rede_performace_f, index="H2")
 
-networklevel(rede_performace_m, index="H2")
+H2_m = networklevel(rede_performace_m, index="H2")
+
+#modelos nulos# gerar 1000 redes aleatórias utilizando vaznull
+
+freq.random<- nullmodel(rede_freq, N=1000,method="vaznull")
+f.random<- nullmodel(rede_performace_f, N=1000,method="vaznull")
+m.random<- nullmodel(rede_performace_m, N=1000,method="vaznull")
+
+H2.freq.random<- unlist(sapply(freq.random, networklevel, index="H2"))
+H2.f.random <- unlist(sapply(f.random, networklevel, index="H2"))
+H2.m.random <- unlist(sapply(m.random, networklevel, index="H2"))
+
+#No fim, gere o valor de p
+p.valuefr <- sum(H2_freq<H2.freq.random)/1000
+p.valuefr
+p.valuef <- sum(H2_f<H2.f.random)/1000
+p.valuef
+p.valuem <- sum(H2_m<H2.m.random)/1000
+p.valuem
+
+# ou intervalo de confiança
+quantile(unlist(H2.freq.random), c(0.025, 0.975))
+
+quantile(unlist(H2.f.random), c(0.025, 0.975))
+
+quantile(unlist(H2.m.random), c(0.025, 0.975))
 
 #Aninhamento
 #FREQ#
-nested(rede_freq, method = "NODF2")
-
-#DEP#
-nested(rede_deposicao, method = "NODF2")
-
-#REM#
-nested(rede_remocao, method = "NODF2")
+wnodf_freq = nested(rede_freq, method = "weighted NODF")
 
 #EFI#
-nested(rede_performace_f, method = "NODF2")
+wnodf_f = nested(rede_performace_f, method = "weighted NODF")
 
-nested(rede_performace_m, method = "NODF2")
+wnodf_m = nested(rede_performace_m, method = "weighted NODF")
+
+#modelos nulos# 
+wnodf.freq.random<- unlist(sapply(freq.random, networklevel, index="weighted NODF"))
+wnodf.f.random <- unlist(sapply(f.random, networklevel, index="weighted NODF"))
+wnodf.m.random <- unlist(sapply(m.random, networklevel, index="weighted NODF"))
+
+#intervalos de confiança#
+quantile(unlist(wnodf.freq.random), c(0.025, 0.975))
+quantile(unlist(wnodf.f.random), c(0.025, 0.975))
+quantile(unlist(wnodf.m.random), c(0.025, 0.975))
+
+#No fim, gere o valor de p
+p.valuefr <- sum(wnodf_freq<wnodf.freq.random)/1000
+p.valuefr
+p.valuef <- sum(wnodf_f<wnodf.f.random)/1000
+p.valuef
+p.valuem <- sum(wnodf_f<wnodf.m.random)/1000
+p.valuem
 
 
 #--------------------------------
@@ -280,31 +314,44 @@ nested(rede_performace_m, method = "NODF2")
 #FREQ#
 mod.freq<-computeModules(rede_freq, method="DormannnStrauss",steps = 10E7) #cria modulo aleatorios dentro dos seus dados e depois te da um resultado da modularidade final e real da sua rede      
 mod.freq<-metaComputeModules(rede_freq, N=5, method="Beckett",steps = 10E7)
-mod.freq@likelihood #valor do indice de modularidade
+mod.freq=mod.freq@likelihood #valor do indice de modularidade
 plotModuleWeb(mod.freq)
-
-#DEP#
-mod.dep<-computeModules(rede_deposicao, method="Beckett", steps=10E7) #cria modulo aleatorios dentro dos seus dados e depois te da um resultado da modularidade final e real da sua rede
-mod.dep<-metaComputeModules(rede_deposicao, N=5, method="Beckett",steps = 10E7)
-mod.dep@likelihood #valor do indice de modularidade
-plotModuleWeb(mod.dep)
-
-#REM#
-mod.rem<-computeModules(rede_remocao, method="Beckett", steps=10E7) #cria modulo aleatorios dentro dos seus dados e depois te da um resultado da modularidade final e real da sua rede
-mod.rem<-metaComputeModules(rede_remocao, N=5, method="Beckett",steps = 10E7)
-mod.rem@likelihood
-plotModuleWeb(mod.rem)
 
 #EFI#
 mod.efi<-computeModules(rede_performace_f, method="Beckett", steps=10E7) #cria modulo aleatorios dentro dos seus dados e depois te da um resultado da modularidade final e real da sua rede
 mod.efi<-metaComputeModules(rede_performace_f, N=5, method="Beckett",steps = 10E7)
-mod.efi@likelihood #valor do indice de modularidade
+mod.efi=mod.efi@likelihood #valor do indice de modularidade
 plotModuleWeb(mod.efi)
 
 mod.efiM<-computeModules(rede_performace_m, method="Beckett", steps=10E8) #cria modulo aleatorios dentro dos seus dados e depois te da um resultado da modularidade final e real da sua rede
 mod.efiM<-metaComputeModules(rede_performace_m, N=5, method="Beckett",steps = 10E7)
-mod.efiM@likelihood #valor do indice de modularidade
+mod.efiM=mod.efiM@likelihood #valor do indice de modularidade
 plotModuleWeb(mod.efiM)
+
+#modelos nulos# 
+nulls_freq <- nullmodel(rede_freq, N=1000, method="vaznull")
+nulls_f <- nullmodel(rede_performace_f, N=1000, method="vaznull")
+nulls_m <- nullmodel(rede_performace_m, N=1000, method="vaznull")
+
+modules.nulls_freq <- sapply(nulls_freq, computeModules, step=10E7)
+like.nulls_freq <- sapply(modules.nulls_freq, function(x) x@likelihood)
+
+modules.nulls_f <- sapply(nulls_f, computeModules, step=10E7)
+like.nulls_f <- sapply(modules.nulls_f, function(x) x@likelihood)
+
+modules.nulls_m <- sapply(nulls_m, computeModules, step=10E7)
+like.nulls_m <- sapply(modules.nulls_m, function(x) x@likelihood)
+
+quantile(unlist(like.nulls_freq), c(0.025, 0.975))
+quantile(unlist(like.nulls_f), c(0.025, 0.975))
+quantile(unlist(like.nulls_m), c(0.025, 0.975))
+
+modelo_H2 <- aov(H2 ~ network, data = metrics)
+anova(modelo_H2)
+
+tukey_H2 <- TukeyHSD(modelo_H2)
+print(tukey_H2)
+
 
 #generalidade de cada um dos níveis das rede#
 networklevel(rede_freq, index="generality")
@@ -319,6 +366,7 @@ specieslevel(rede_deposicao, index=c("d","species strength"))
 specieslevel(rede_performace_f, index=c("d","species strength"))
 specieslevel(rede_remocao, index=c("d","species strength"))
 specieslevel(rede_performace_m, index=c("d", "species strength"))
+?specieslevel
 
 #dados com vaores de força e d das espécies#
 z_plant=read.csv2("z_score_plant.csv", header = TRUE, row.names = 1)
@@ -326,138 +374,53 @@ z_bee=read.csv2("z_score_bee.csv", header = TRUE, row.names = 1)
 
 ############################################################
 #testando se existe diferença entre força e especilização das esp. em cada rede#
-#TESTE T#
+#test t#
 ##BEE##
 
-t.test(z_bee$z_strength_freq, z_bee$z_strength_perf_f)
-t.test(z_bee$z_d_freq, z_bee$z_d_perf_f)
+t.test(z_bee$z_strength_freq, z_bee$z_strength_perf_m, paired = TRUE)
+t.test(z_bee$z_strength_freq, z_bee$z_strength_perf_f, paired = TRUE)
+t.test(z_bee$z_strength_perf_f, z_bee$z_strength_perf_m, paired = TRUE)
+##TODOS P SIGNIFICATIVO##
 
-t.test(z_bee$z_strength_freq, z_bee$z_strength_perf_m)
-t.test(z_bee$z_d_freq, z_bee$z_d_perf_m)
+t.test(z_bee$z_d_freq, z_bee$z_d_perf_f, paired = TRUE)
+t.test(z_bee$z_d_freq, z_bee$z_d_perf_m, paired = TRUE)
+t.test(z_bee$z_d_perf_f, z_bee$z_d_perf_m, paired = TRUE)
 
-t.test(z_bee$z_strength_freq, z_bee$z_strength_remo)
-t.test(z_bee$z_d_freq, z_bee$z_d_remo)
+#testando se existe correlação entre força e especilização das esp. em cada rede#
+##BEE##
+indices=read.table("indices_especies.txt", header=TRUE)
 
-t.test(z_bee$z_strength_freq, z_bee$z_strength_depo)
-t.test(z_bee$z_d_freq, z_bee$z_d_depo)
+cor.test(indices$z_strength_freq, indices$z_strength_perf_f)
+cor.test(indices$z_strength_freq, indices$z_strength_perf_m)
+cor.test(indices$z_strength_perf_f, indices$z_strength_perf_m)
 
-t.test(z_bee$z_strength_depo, z_bee$z_strength_perf_f)
-t.test(z_bee$z_d_depo, z_bee$z_d_perf_f)
+cor.test(indices$z_d_freq, indices$z_d_perf_f)
+cor.test(indices$z_d_freq, indices$z_d_perf_m)
+cor.test(indices$z_d_perf_f, indices$z_d_perf_m)
 
-t.test(z_bee$z_strength_depo, z_bee$z_strength_remo)
-t.test(z_bee$z_d_depo, z_bee$z_d_remo)
+cor.test(indices$c_freq, indices$c_perf_fem)
+cor.test(indices$c_freq, indices$c_perf_masc)
+cor.test(indices$c_perf_fem, indices$c_perf_masc)
 
-t.test(z_bee$z_strength_depo, z_bee$z_strength_freq)
-t.test(z_bee$z_d_depo, z_bee$z_d_freq)
-
-t.test(z_bee$z_strength_depo, z_bee$z_strength_perf_m)
-t.test(z_bee$z_d_depo, z_bee$z_d_perf_m)
-
-t.test(z_bee$z_strength_perf_f, z_bee$z_strength_freq)
-t.test(z_bee$z_d_perf_f, z_bee$z_d_freq)
-
-t.test(z_bee$z_strength_perf_f, z_bee$z_strength_depo)
-t.test(z_bee$z_d_perf_f, z_bee$z_d_depo)
-
-t.test(z_bee$z_strength_perf_f, z_bee$z_strength_remo)
-t.test(z_bee$z_d_perf_f, z_bee$z_d_remo)
-
-t.test(z_bee$z_strength_perf_f, z_bee$z_strength_perf_m)
-t.test(z_bee$z_d_perf_f, z_bee$z_d_perf_m)
-
-t.test(z_bee$z_strength_remo, z_bee$z_strength_freq)
-t.test(z_bee$z_d_remo, z_bee$z_d_freq)
-
-t.test(z_bee$z_strength_remo, z_bee$z_strength_depo)
-t.test(z_bee$z_d_remo, z_bee$z_d_depo)
-
-t.test(z_bee$z_strength_remo, z_bee$z_strength_perf_f)
-t.test(z_bee$z_d_remo, z_bee$z_d_perf_f)
-
-t.test(z_bee$z_strength_remo, z_bee$z_strength_perf_m)
-t.test(z_bee$z_d_remo, z_bee$z_d_perf_m)
-
-t.test(z_bee$z_strength_perf_m, z_bee$z_strength_freq)
-t.test(z_bee$z_d_perf_m, z_bee$z_d_freq)
-
-t.test(z_bee$z_strength_perf_m, z_bee$z_strength_depo)
-t.test(z_bee$z_d_perf_m, z_bee$z_d_depo)
-
-t.test(z_bee$z_strength_perf_m, z_bee$z_strength_perf_f)
-t.test(z_bee$z_d_perf_m, z_bee$z_d_perf_f)
-
-t.test(z_bee$z_strength_perf_m, z_bee$z_strength_remo)
-t.test(z_bee$z_d_perf_m, z_bee$z_d_remo)
+cor.test(indices$z_freq, indices$z_perf_fem)
+cor.test(indices$z_freq, indices$z_perf_masc)
+cor.test(indices$z_perf_fem, indices$z_perf_masc)
 
 ##PLANT##
-t.test(z_plant$z_strength_freq, z_plant$z_strength_perf_f)
-t.test(z_plant$z_d_freq, z_plant$z_d_perf_f)
-
 t.test(z_plant$z_strength_freq, z_plant$z_strength_perf_m)
+t.test(z_plant$z_strength_freq, z_plant$z_strength_perf_f) #P SIG#
+t.test(z_plant$z_strength_perf_f, z_plant$z_strength_perf_m) #P SIG#
+
 t.test(z_plant$z_d_freq, z_plant$z_d_perf_m)
-
-t.test(z_plant$z_strength_freq, z_plant$z_strength_remo)
-t.test(z_plant$z_d_freq, z_plant$z_d_remo)
-
-t.test(z_plant$z_strength_freq, z_plant$z_strength_depo)
-t.test(z_plant$z_d_freq, z_plant$z_d_depo)
-
-t.test(z_plant$z_strength_depo, z_plant$z_strength_perf_f)
-t.test(z_plant$z_d_depo, z_plant$z_d_perf_f)
-
-t.test(z_plant$z_strength_depo, z_plant$z_strength_remo)
-t.test(z_plant$z_d_depo, z_plant$z_d_remo)
-
-t.test(z_plant$z_strength_depo, z_plant$z_strength_freq)
-t.test(z_plant$z_d_depo, z_plant$z_d_freq)
-
-t.test(z_plant$z_strength_depo, z_plant$z_strength_perf_m)
-t.test(z_plant$z_d_depo, z_plant$z_d_perf_m)
-
-t.test(z_plant$z_strength_perf_f, z_plant$z_strength_freq)
-t.test(z_plant$z_d_perf_f, z_plant$z_d_freq)
-
-t.test(z_plant$z_strength_perf_f, z_plant$z_strength_depo)
-t.test(z_plant$z_d_perf_f, z_plant$z_d_depo)
-
-t.test(z_plant$z_strength_perf_f, z_plant$z_strength_remo)
-t.test(z_plant$z_d_perf_f, z_plant$z_d_remo)
-
-t.test(z_plant$z_strength_perf_f, z_plant$z_strength_perf_m)
+t.test(z_plant$z_d_freq, z_plant$z_d_perf_f)
 t.test(z_plant$z_d_perf_f, z_plant$z_d_perf_m)
 
-t.test(z_plant$z_strength_remo, z_plant$z_strength_freq)
-t.test(z_plant$z_d_remo, z_plant$z_d_freq)
-
-t.test(z_plant$z_strength_remo, z_plant$z_strength_depo)
-t.test(z_plant$z_d_remo, z_plant$z_d_depo)
-
-t.test(z_plant$z_strength_remo, z_plant$z_strength_perf_f)
-t.test(z_plant$z_d_remo, z_plant$z_d_perf_f)
-
-t.test(z_plant$z_strength_remo, z_plant$z_strength_perf_m)
-t.test(z_plant$z_d_remo, z_plant$z_d_perf_m)
-
-t.test(z_plant$z_strength_perf_m, z_plant$z_strength_freq)
-t.test(z_plant$z_d_perf_m, z_plant$z_d_freq)
-
-t.test(z_plant$z_strength_perf_m, z_plant$z_strength_depo)
-t.test(z_plant$z_d_perf_m, z_plant$z_d_depo)
-
-t.test(z_plant$z_strength_perf_m, z_plant$z_strength_perf_f)
-t.test(z_plant$z_d_perf_m, z_plant$z_d_perf_f)
-
-t.test(z_plant$z_strength_perf_m, z_plant$z_strength_remo)
-t.test(z_plant$z_d_perf_m, z_plant$z_d_remo)
 
 ##Calculando valores de c $ z dentro descrever o papel de cada espécie na modularidade da rede##
 
 czvalues(mod.freq, level="higher")
 czvalues(mod.freq, level="lower")
 
-##ERRO##???????????
-#Error in dim(slot(moduleWebObject, "originalWeb")) == 0 || dim(slot(moduleWebObject,  : 
-  'length = 2' in coercion to 'logical(1)'#
 
 #salvando as imagens de redes#
 pdf('rede_freq.pdf', width=12.33071, height=10.33071)

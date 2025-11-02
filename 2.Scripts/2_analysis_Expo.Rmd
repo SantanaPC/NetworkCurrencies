@@ -35,6 +35,7 @@ summary(log(efic$polen_expor))
 
 hist(efic$polen_expor)
 ```
+Exploring how pollen exportation varies according to functional groups of bees.
 
 ```{r pollenExpo}
 interBeeChamExpo<-table(efic$func_group, efic$ch_sp)#we have a lot of zeros, what does make sense from the point of view of interaction, but makes a bit more trickier to fit the model, so either than using the interaction term, we can try only as additive.
@@ -144,6 +145,7 @@ ggplot(predictions, aes(x = x, y = predicted, color = group)) +
 # Alternativamente, use o método plot diretamente
 plot(predictions)
 ```
+Here, we can see how it varies according to the different bee species: 
 
 ```{r}
 ###Boxplot of pollen export per bee species
@@ -159,5 +161,26 @@ ggplot(efic, aes(x=bee_sp, y=polen_expor, fill=func_group)) +
         axis.title.x = element_text(size=16), 
         axis.text.y= element_text(size=12), axis.title.y = element_text(size=16),
         theme(legend.position= "none"))
+
+```
+And we can visualize this variation in pollen deposition for each functional group in the network as well.
+
+```{r Network Analysis for Pollen Export}
+
+rede_remocao = read.table("1.RawData/rede_remocao7.txt", header = TRUE) #pollen export metric = mean number of pollen removed from the anthers on each interaction
+
+plotweb(rede_remocao)
+plotweb(rede_remocao, text.rot=90, col.low="#999999", col.high="#000000", bor.col.high= "#999999", bor.col.low="#000000", bor.col.interaction="#333333", col.interaction="#666666") #muda as cores da rede
+
+```
+
+And we can combine the frequency of visits with the total amount of pollen grains exported to explore the pollinators role in been efficient in pollen exportation.
+
+```{r Combination of currencies to build the effectiveness network}
+
+rede_performace_m = read.csv2("1.RawData/performace_masculina.csv", header = TRUE, row.names = 1)#efficacy metric= mean total amount of pollen exported x interaction frequency
+
+plotweb(rede_performace_m)
+plotweb(rede_performace_m, text.rot=90, col.low="#999999", col.high="#000000", bor.col.high= "#999999", bor.col.low="#000000", bor.col.interaction="#333333", col.interaction="#666666") #muda as cores da rede
 
 ```

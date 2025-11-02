@@ -1,5 +1,32 @@
+---
+title: "3_analysis_DepoExpoRatio.R"
+author: "Pamela Santana & Lorena Valadão"
+date: "`r format(Sys.time(), '%d de %B de %Y')`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+    self_contained: true
+    thumbnails: false
+    lightbox: true
+    gallery: false
+  pdf_document:
+    highlight: tango
+    toc: yes
+---
 
-efic = read.csv2("1.RawData/dados_obs_grupos.csv", header = TRUE) #dados 
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library("cowplot")
+library("ggplot2")
+library(dplyr)
+library(ggrepel)
+
+opts_chunk$set(fig.align = 'center', warning = FALSE, message = FALSE, error = FALSE, echo=T, cache=F)
+options(formatR.arrow = TRUE, width = 90, help_type = "html")
+```
+  
+```{r Effectiveness plot on Male and Female Perfomance}
+efic = read.csv2("1.RawData/dados_obs.csv", header = TRUE) #dados 
+
 q1<-efic$polen_depo
 q2<-log(efic$polen_expor)    
 label<-efic$func_group
@@ -15,8 +42,6 @@ myylab="Pollen exportation (log)"
         theme_bw() +
         labs(x = myxlab, y = myylab) +
         theme(legend.title = element_blank())
-    
-    
     
     ##### Plotting contour lines ####
     q1.error <- sd(q1)
@@ -36,9 +61,9 @@ myylab="Pollen exportation (log)"
         ## Define line breaks ##
         ## other alternatives, see ?classIntervals
 lines.breaks = "quantile"
-nlines = 5
+nlines = 4
 
-            lbreaks <- classInt::classIntervals(df$z, n = nlines + 1, 
+        lbreaks <- classInt::classIntervals(df$z, n = nlines + 1, 
                                                 style = lines.breaks)$brks
  
         #### Preparing curve labels ####
@@ -61,20 +86,6 @@ nlines = 5
                          breaks = lbreaks, linewidth  = 0.3) + 
             geom_text(aes(x, y, label = label), data = xy.labels)
         
-        
-
-        ### Error bars ###
-    
-         d <- data.frame(d, x.error = q1.error)
-        #d$x.error[is.na(d$x.error)] <- 0
-        effplot <- effplot + 
-            geom_errorbarh(aes(xmin = x - x.error, xmax = x + x.error), data = d)
- 
-        d <- data.frame(d, y.error = q2.error)
-        #d$y.error[is.na(d$y.error)] <- 0
-        effplot <- effplot + 
-            geom_errorbar(aes(ymin = y - y.error, ymax = y + y.error), data = d)
-    
     ### Draw points ###
     pts.size = 2
     pts.shape = NULL
@@ -91,25 +102,51 @@ nlines = 5
     exp$mean_exp_log<-mean_exp_log$x
     exp$sd_exp_log<-sd_exp_log$x
     #unique(efic$bee_sp)
-    
-    library(dplyr)
+   
     efic_unique <- efic |>
         distinct(bee_sp, .keep_all = TRUE)
     
     comb <- left_join(exp, efic_unique, by = "bee_sp")
     exp$func_group<-comb$func_group
     exp$func_group<-as.factor(exp$func_group)
-    levels(exp$func_group)<-c("flow_buzz", "ant_buzz", "robber", "theft")
+    levels(exp$func_group)
+    #levels(exp$func_group)<-c("flow_buzz", "ant_buzz", "robber", "theft")
+    #length(exp$mean_exp_log)
     
-    if (is.null(pts.color) & is.null(pts.shape)) {
-    length(exp$mean_exp_log)
-      
-        effplot + 
-        geom_errorbar(aes(x=mean_depo, y=mean_exp_log, ymin=mean_exp_log-sd_exp_log, ymax=mean_exp_log+sd_exp_log), color="darkgrey", width=.3, linewidth=0.5, data=exp)+
-        geom_errorbarh(aes( y=mean_exp_log, x=mean_depo, xmin = mean_depo - sd_depo, xmax = mean_depo + sd_depo), height = 0.1, color="darkgrey",data=exp)+
-        scale_colour_manual(values=c("#c85d00", "#ac00e8", "#e72881", "#1f8b7f")) +
-        geom_point(aes(x=mean_depo, y=mean_exp_log, fill=exp$func_group, colour=exp$func_group),size = 3, shape = 16, data=exp)+
+    effplot + 
+        geom_errorbar(aes(x=mean_depo, y=mean_exp_log, ymin=mean_exp_log-sd_exp_log, ymax=mean_exp_log+sd_exp_log), color="black", width=.3, linewidth=1, data=exp)+
+        geom_errorbarh(aes( y=mean_exp_log, x=mean_depo, xmin = mean_depo - sd_depo, xmax = mean_depo + sd_depo), height = 0.2, color="black",data=exp)+
+        scale_colour_manual(values=c("#63077D","#e72881","#1C796F", "#FF6A00")) +
+        geom_point(aes(x=mean_depo, y=mean_exp_log, fill=exp$func_group, colour=exp$func_group),
+                   alpha=0.8,
+                   color = "black",
+                   stroke = 1,
+                   shape = 21,
+                   size = 4,
+                   data=exp)+xlim(0, 60)+ylim(0, 12)+
         labs(x="Mean pollen deposition", y = "Mean pollen export(Log)")+
         theme(text = element_text(size = 16)) + theme(axis.text.x=element_text(hjust = 1))+ theme(axis.title = element_text(size = 15))+theme(axis.text.x = element_text(size = 12))+theme_cowplot()
-        #+ geom_text_repel(aes(x=mean_depo, y=mean_exp_log), size = label.size, label = exp$func_group, data = exp, nudge_y = 0.5, segment.size = 0.2, segment.alpha = 0.75)
+#         geom_text_repel(aes(x=mean_depo, y=mean_exp_log), size = label.size, label = exp$func_group, data = exp, nudge_y = 0.5, segment.size = 0.2, segment.alpha = 0.75)
+
+```
+
+```{r Graph for the paper}
+        ggplot(exp)+
+          geom_errorbar(aes(x=mean_depo, ymin=mean_exp_log-sd_exp_log, ymax=mean_exp_log+sd_exp_log, color=func_group),width=.5, size=0.4, alpha = 0.6)+
+          geom_errorbarh(aes(y=mean_exp_log, xmin=mean_depo-sd_depo, xmax=mean_depo+sd_depo, color=func_group), height=.2, size=0.4, alpha = 0.6) + 
+          geom_point(aes(x=mean_depo, y=mean_exp_log, color=func_group, shape = func_group),
+        #alpha=0.8,
+        stroke = 1,
+        size = 2)+xlim(0, 60)+ylim(0, 12)+
+          #theme_bw()+
+          labs(x="Mean pollen deposition", y = "Mean pollen removal (Log)")+
+          scale_colour_manual(values=c("#63077D","#e72881", "#1C796F", "#FF6A00")) +
+          theme(legend.position = "none")+theme(text = element_text(size = 16)) + 
+          theme(axis.text.x=element_text(hjust = 1)) +
+          theme(axis.title = element_text(size = 15))+
+          theme(axis.text.x = element_text(size = 12))+
+          theme_cowplot()
+        
+        
+```
 

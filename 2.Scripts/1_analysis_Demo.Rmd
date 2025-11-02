@@ -1,0 +1,158 @@
+---
+title: "Plant-buzzpollinators networks"
+author: "Lorena Valadão & Pamela Santana"
+date: "`r format(Sys.time(), '%d de %B de %Y')`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+    self_contained: true
+    thumbnails: false
+    lightbox: true
+    gallery: false
+  pdf_document:
+    highlight: tango
+    toc: yes
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(ggplot2);library(lme4);library(DHARMa);library(MuMIn); library(glmmTMB)
+library(knitr);library(bipartite);library(iNEXT);library(vegan);library(igraph)
+library(cowplot)
+
+opts_chunk$set(fig.align = 'center', warning = FALSE, message = FALSE, error = FALSE, echo=T, cache=F)
+options(formatR.arrow = TRUE, width = 90, help_type = "html")
+```
+
+Here, we explore how different bee species and functional groups contribute to pollen deposition on the stigmas of *Chamaescrista* plants. We analyze the pollen deposition by different pollinators species (categorized in different groups), and we fit various statistical models to understand the relationships between these variables.
+
+```{r reading data}
+efic = read.csv2("1.RawData/dados_obs_grupos.csv", header = TRUE) #dataset complete
+
+str(efic)
+
+efic$ch_sp<-as.factor(efic$ch_sp)
+efic$bee_sp<-as.factor(efic$bee_sp)
+efic$id_flow<-as.factor(efic$id_flow)
+efic$func_group<-as.factor(efic$func_group)
+temp<-as.data.frame(summary(efic$bee_sp))
+dim(temp)
+temp[temp$`summary(efic$bee_sp)`>=3,]
+summary(efic$ch_sp)
+summary(efic$bee_sp)
+table(efic$bee_sp, efic$ch_sp)
+hist(efic$polen_depo)#seems to be zero inflated
+
+#excluding a few species that have very low sample size
+efic_sub<-efic[efic$bee_sp!="Eufriesea_nigrohirta"|
+    efic$bee_sp!="Exomalopsis_tomentosa"|
+    efic$bee_sp!="Oxaea_sp.01"|
+    efic$bee_sp!="Ptiloglossa_sp.05"|
+    efic$bee_sp!="Xylocopa_fortuita",]
+
+##Models for pollen deposition##
+
+efic_m<-glmer.nb(polen_depo~log(polen_expor)*func_group+(1|ch_sp), data = efic)
+efic_lm1<- glmmTMB(polen_depo~polen_expor*bee_sp+(1|ch_sp),  family = nbinom2, data = efic)
+#both are showing a problem: Model failed to converge: degenerate  Hessian with 3 negative eigenvalues
+efic_lm2<-glmmTMB(polen_depo~polen_expor*func_group+(1|ch_sp),  family = nbinom2, data = efic)
+#but only with the functional group, the model converged, so we can try to fit the model without the bee species
+plot(simulateResiduals(efic_lm2))#as this residual are not normal, we can try to fit a zero-inflated model
+efic_lm3<- glmmTMB(polen_depo ~ polen_expor * func_group +(1|ch_sp), 
+                      ziformula = ~polen_expor, 
+                      family = nbinom2, 
+                      data = efic)# we have the same problem, so lets try to use the plant species as a fix factor
+efic_lm4<- glmmTMB(polen_depo ~ polen_expor * func_group + ch_sp, 
+                              ziformula = ~1, 
+                              family = poisson, 
+                              data = efic)# we still have the same problem, even using a poisson distribution
+efic_lm5<- glmmTMB(polen_depo ~ polen_expor * func_group + (1|ch_sp), 
+                    family = truncated_nbinom2, data = efic)
+plot(simulateResiduals(efic_lm5))#using the truncated model, the residuals looks better, but there is still some error
+
+bbmle::AICctab(efic_m, efic_lm1, efic_lm2, efic_lm3, efic_lm4,efic_lm5, weights = T)
+
+plot(simulateResiduals(efic_lm5))#even though the residuals are still not normal, this is the best model so far, but let's try to decrease the amount of variables
+
+efic_lm6<- glmer.nb(polen_depo~log(polen_expor)+(1|ch_sp), data = efic)
+efic_lm7<- glmer.nb(polen_depo~1+(1|ch_sp), data = efic)
+efic_lm8<- MASS::glm.nb(polen_depo~bee_sp, data = efic)
+efic_lm9<- MASS::glm.nb(polen_depo~1, data = efic)
+efic_lm10<- MASS::glm.nb(polen_depo~func_group, data = efic)
+efic_lm11<- glmmTMB(polen_depo~func_group+(1|ch_sp), 
+                                 ziformula = ~1, 
+                                 family = truncated_nbinom2, 
+                                 data = efic)
+
+bbmle::AICctab(efic_m, efic_lm1, efic_lm2, efic_lm3, efic_lm4,efic_lm5,
+               efic_lm6,efic_lm7, efic_lm8, efic_lm9, efic_lm10,efic_lm11, weights = T)
+
+MuMIn::AICc(efic_m, efic_lm1, efic_lm2, efic_lm3, efic_lm4,efic_lm5,
+               efic_lm6,efic_lm7, efic_lm8, efic_lm9, efic_lm10,efic_lm11)
+#the best model is the lm5, which had the lowest AICc, but the residuals didn't fit very nicely, however is the best model so far
+
+interBeeCham<-table(efic$bee_sp, efic$ch_sp)#we have a lot of zeros, what does make sense from the point of view of interaction, but makes a bit more trickier to fit the model, so either than using the interaction term, we can try only as additive.
+
+summary(efic_lm11) #the best fit model indicates that there is an effect of the interaction between pollen exportation and bee species on pollen deposition for each chamaescrista species.
+
+emS <- emmeans::emmeans(efic_lm11, pairwise ~ func_group,
+               regrid="log",
+               type="response")
+emS$emmeans
+emS$contrasts
+emS<-as.data.frame(emS$emmeans)
+
+plot(emS)+theme_bw() +labs(y="", x = "Response")
+
+#and we can visualize it with through the graph below
+
+ggplot(emS)+ 
+  geom_errorbar(aes(x=func_group, ymin=asymp.LCL, ymax=asymp.UCL), width=.1, size=0.3, color="darkgrey")+ylim(0,45)+
+    geom_point(aes(x=func_group, y=response, colour=emS[,1]), size=4, shape=19)+
+  scale_colour_manual(values=c("#c85d00", "#ac00e8", "#e72881", "#1f8b7f"), guide="none")+
+  xlab("Functional group") + ylab("Pollen deposition") +
+  scale_x_discrete(labels=c("Flower buzz", "Anther buzz", "Robber", "Theft"))+
+  geom_text(label = c("a", "b", "c", "c"), aes(y = rep(41,4), x = emS[,1]), size = 4)+ theme(axis.text.x = element_text(size=12), axis.title.x = element_text(size=16), 
+        axis.text.y= element_text(size=12), axis.title.y = element_text(size=16))+theme_cowplot()
+
+```
+That is variation within the bee species belonging to the same functional group, as shown below:
+```{r BeePollenDepo}
+efic$bee_sp <- reorder(efic$bee_sp, efic$polen_depo, FUN = mean)
+par(mfrow=c(2,1))
+
+ggplot(efic, aes(x=bee_sp, y=polen_depo, fill=func_group)) +
+  geom_boxplot(width=0.4,lwd=0.75, alpha=0.5)+
+  scale_fill_manual(values=c("#c85d00", "#ac00e8", "#e72881", "#1f8b7f"), guide="none")+
+  xlab("Bee species") + ylab("Pollen deposition") +
+  facet_grid(~func_group, scales = "free", space = "free_x") + theme_bw()+
+  theme(axis.text.x = element_text(size=9, angle = 90), 
+        axis.title.x = element_text(size=16), 
+        axis.text.y= element_text(size=12), axis.title.y = element_text(size=16),
+        theme(legend.position= "none"))
+
+```
+And we can visualize this variation in pollen deposition for each functional group in the network as well.
+
+```{r Network Analysis for Pollen Deposition}
+
+rede_deposicao = read.csv2("1.RawData/rede_deposicao3.csv", header = TRUE, row.names = 1) #deposition metric = mean polen deposited per interaction into the stigma
+
+plotweb(rede_deposicao)
+plotweb(rede_deposicao, text.rot=90, col.low="#999999", col.high="#000000", bor.col.high= "#999999", bor.col.low="#000000", bor.col.interaction="#333333", col.interaction="#666666") #muda as cores da rede
+
+```
+
+And we can combine the frequency of visits with the total amount of pollen grains to explore the pollinators role in beeing efficient in pollen deposition.
+
+```{r Combination of currencies to build the effectiveness network}
+
+rede_eficacia_f = read.csv2("1.RawData/rede_eficacia_f.csv", header = TRUE, row.names = 1, sep=",") #efficacy metric= total amount of pollen deposited x interaction frequency
+
+plotweb(rede_eficacia_f)
+plotweb(rede_eficacia_f, text.rot=90, col.low="#999999", col.high="#000000", bor.col.high= "#999999", bor.col.low="#000000", bor.col.interaction="#333333", col.interaction="#666666") #muda as cores da rede
+
+```
+
+
+
+
