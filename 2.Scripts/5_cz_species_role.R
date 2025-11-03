@@ -11,10 +11,10 @@ library(ggplot2)
 # ---- Load networks ----
 # Matrices: rows = plants, columns = pollinators
 rede_freq<- read.csv2("1.RawData/rede_frequencia.csv", row.names = 1, sep=",")
-rede_deposicao<- read.csv2("1.RawData/rede_deposicao3.csv", row.names = 1)
+rede_deposicao<- read.csv2("1.RawData/rede_deposicao.csv", row.names = 1)
 rede_performance_f<- read.csv2("1.RawData/rede_eficacia_f.csv", row.names = 1, sep=",")
-rede_performance_m<- read.csv2("1.RawData/performace_masculina.csv", row.names = 1, , dec=",")
-rede_remocao<- read.table("1.RawData/rede_remocao7.txt", header = TRUE, row.names = 1, , sep = "\t")
+rede_performance_m<- read.csv2("1.RawData/rede_eficacia_m.csv", row.names = 1, , dec=",")
+rede_remocao<- read.table("1.RawData/rede_remocao.txt", header = TRUE, row.names = 1, , sep = "\t")
 
 # ---- Species-level metrics ----
 # d' = specialization, species strength = contribution to network
@@ -45,7 +45,7 @@ t_tests_bee <- list(
 )
 
 # ---- Correlations for bees ----
-indices <- read.table("indices_especies.txt", header = TRUE)
+indices <- read.table("1.RawData/indices_especies.txt", header = TRUE)
 cor_tests_bee <- list(
   strength_freq_vs_perf_f = cor.test(indices$z_strength_freq, indices$z_strength_perf_f),
   strength_freq_vs_perf_m = cor.test(indices$z_strength_freq, indices$z_strength_perf_m),
@@ -328,3 +328,4 @@ plot_all_cz <- function(cz_results_list, pollinator_groups = NULL,
 }
 
 plots_all <- plot_all_cz(cz_results, pollinator_groups = pollinator_groups)
+

@@ -15,24 +15,24 @@ output:
 ---
 
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
-library(ggplot2);library(lme4);library(DHARMa);library(MuMIn); library(glmmTMB)
-library(knitr);library(bipartite);library(iNEXT);library(vegan);library(igraph)
-library(cowplot)
+library(ggplot2);library(lme4);library(DHARMa);library(MuMIn); library(glmmTMB);library(knitr);library(bipartite);library(iNEXT);library(vegan);library(igraph);library(cowplot);library(stringr)
 
 opts_chunk$set(fig.align = 'center', warning = FALSE, message = FALSE, error = FALSE, echo=T, cache=F)
 options(formatR.arrow = TRUE, width = 90, help_type = "html")
 ```
 
-Here, we explore how different bee species and functional groups contribute to pollen deposition on the stigmas of *Chamaescrista* plants. We analyze the pollen deposition by different pollinators species (categorized in different groups), and we fit various statistical models to understand the relationships between these variables.
+Here, we explore how different bee species and functional groups contribute to pollen deposition on the stigmas of _Chamaescrista_ plants. We analyse the pollen deposition by different pollinators species (categorized in different groups), and we fit various statistical models to understand the relationships between these variables.
 
 ```{r reading data}
-efic = read.csv2("1.RawData/dados_obs_grupos.csv", header = TRUE) #dataset complete
+efic = read.csv2("1.RawData/dados_obs_grupos.csv", header = TRUE, stringsAsFactors = FALSE) #dataset complete
 
 str(efic)
 
 efic$ch_sp<-as.factor(efic$ch_sp)
+efic$bee_sp <- str_trim(efic$bee_sp)
 efic$bee_sp<-as.factor(efic$bee_sp)
 efic$id_flow<-as.factor(efic$id_flow)
+efic$func_group <- trimws(efic$func_group)
 efic$func_group<-as.factor(efic$func_group)
 temp<-as.data.frame(summary(efic$bee_sp))
 dim(temp)
@@ -108,21 +108,21 @@ plot(emS)+theme_bw() +labs(y="", x = "Response")
 ggplot(emS)+ 
   geom_errorbar(aes(x=func_group, ymin=asymp.LCL, ymax=asymp.UCL), width=.1, size=0.3, color="darkgrey")+ylim(0,45)+
     geom_point(aes(x=func_group, y=response, colour=emS[,1]), size=4, shape=19)+
-  scale_colour_manual(values=c("#c85d00", "#ac00e8", "#e72881", "#1f8b7f"), guide="none")+
+  scale_colour_manual(values=c("#e72881", "#63077D","#1C796F","#FF6A00"), guide="none")+
   xlab("Functional group") + ylab("Pollen deposition") +
   scale_x_discrete(labels=c("Flower buzz", "Anther buzz", "Robber", "Theft"))+
   geom_text(label = c("a", "b", "c", "c"), aes(y = rep(41,4), x = emS[,1]), size = 4)+ theme(axis.text.x = element_text(size=12), axis.title.x = element_text(size=16), 
         axis.text.y= element_text(size=12), axis.title.y = element_text(size=16))+theme_cowplot()
 
 ```
-That is variation within the bee species belonging to the same functional group, as shown below:
-```{r BeePollenDepo}
+We observe that the four functional groups vary in their hability to deposit pollen on the stigmas, been the anther buzz bees the most efficient. Flower buzz also differ from the other two groups (Robber and Theft). We also observe variation within the bee species belonging to the same functional group, as shown below:
+```{r Variation in Pollen Deposition among Bee Species}
 efic$bee_sp <- reorder(efic$bee_sp, efic$polen_depo, FUN = mean)
 par(mfrow=c(2,1))
 
 ggplot(efic, aes(x=bee_sp, y=polen_depo, fill=func_group)) +
   geom_boxplot(width=0.4,lwd=0.75, alpha=0.5)+
-  scale_fill_manual(values=c("#c85d00", "#ac00e8", "#e72881", "#1f8b7f"), guide="none")+
+  scale_fill_manual(values=c("#e72881", "#63077D","#1C796F","#FF6A00"), guide="none")+
   xlab("Bee species") + ylab("Pollen deposition") +
   facet_grid(~func_group, scales = "free", space = "free_x") + theme_bw()+
   theme(axis.text.x = element_text(size=9, angle = 90), 
@@ -135,21 +135,66 @@ And we can visualize this variation in pollen deposition for each functional gro
 
 ```{r Network Analysis for Pollen Deposition}
 
-rede_deposicao = read.csv2("1.RawData/rede_deposicao3.csv", header = TRUE, row.names = 1) #deposition metric = mean polen deposited per interaction into the stigma
+rede_deposicao = read.csv2("1.RawData/rede_deposicao.csv", header = TRUE, row.names = 1) #deposition metric = mean pollen deposited per interaction into the stigma
+pollinator_groups <- tapply(efic$func_group, efic$bee_sp, function(x) unique(x)[1])
 
-plotweb(rede_deposicao)
-plotweb(rede_deposicao, text.rot=90, col.low="#999999", col.high="#000000", bor.col.high= "#999999", bor.col.low="#000000", bor.col.interaction="#333333", col.interaction="#666666") #muda as cores da rede
+table(efic$func_group, efic$bee_sp)
+pollinators_net <- colnames(rede_deposicao)
+
+setdiff(pollinators_net, names(pollinator_groups))#some names are not matching between the data.frames
+setdiff(names(pollinator_groups), pollinators_net)
+
+pollinators_net_corrected <- gsub("0", "na", pollinators_net)
+colnames(rede_deposicao) <- pollinators_net_corrected
+
+setdiff(pollinators_net_corrected, names(pollinator_groups))
+setdiff(names(pollinator_groups), pollinators_net_corrected)
+
+group_colors <- c(
+  "ant_buzz"  = "#e72881",
+  "flow_buzz" = "#63077D",
+  "robber"    = "#FF6A00",
+  "theft"     = "#1C796F"
+)
+
+pollinator_groups_ordered <- pollinator_groups[colnames(rede_deposicao)]
+
+pollinator_colors <- group_colors[pollinator_groups_ordered]
+
+pollinator_colors[is.na(pollinator_colors)] <- "grey50"
+
+plotweb(rede_deposicao,
+        text.rot = 90,
+        col.low = "#999999",            # plants
+        col.high = pollinator_colors,   # polinators
+        bor.col.low = "#000000",
+        bor.col.high = "black",
+        bor.col.interaction = "#333333",
+        col.interaction = "#666666")
 
 ```
 
-And we can combine the frequency of visits with the total amount of pollen grains to explore the pollinators role in beeing efficient in pollen deposition.
+And we can combine the frequency of visits with the total amount of pollen grains to explore the pollinators role in been efficient in pollen deposition.
 
 ```{r Combination of currencies to build the effectiveness network}
 
 rede_eficacia_f = read.csv2("1.RawData/rede_eficacia_f.csv", header = TRUE, row.names = 1, sep=",") #efficacy metric= total amount of pollen deposited x interaction frequency
+pollinators_net <- colnames(rede_eficacia_f)
+pollinator_groups_ordered <- pollinator_groups[colnames(rede_eficacia_f)]
 
-plotweb(rede_eficacia_f)
-plotweb(rede_eficacia_f, text.rot=90, col.low="#999999", col.high="#000000", bor.col.high= "#999999", bor.col.low="#000000", bor.col.interaction="#333333", col.interaction="#666666") #muda as cores da rede
+pollinator_colors <- group_colors[pollinator_groups_ordered]
+
+pollinator_colors[is.na(pollinator_colors)] <- "grey50"
+
+
+plotweb(rede_eficacia_f,
+        text.rot = 90,
+        col.low = "#999999",            # plants
+        col.high = pollinator_colors,   # polinators
+        bor.col.low = "#000000",
+        bor.col.high = "black",
+        bor.col.interaction = "#333333",
+        col.interaction = "#666666")
 
 ```
 

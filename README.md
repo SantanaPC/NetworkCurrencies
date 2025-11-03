@@ -17,13 +17,13 @@ analysis presented in this study.
 
 - `rede_frequencia.csv` a data frame containing all species and the frequency of visits of each pollinator species to each plant species.
 
-- `rede_deposicao3.csv` a data frame containing all species and the total amount of pollen deposited on the stigma by each pollinator species to each plant species.
+- `rede_deposicao.csv` a data frame containing all species and the total amount of pollen deposited on the stigma by each pollinator species to each plant species.
 
-- `rede_remocao7.txt` a data frame containing all species and the total amount of pollen removed from the anthers by each pollinator species after a visit to a plant species.
+- `rede_remocao.txt` a data frame containing all species and the total amount of pollen removed from the anthers by each pollinator species after a visit to a plant species.
 
 - `rede_eficacia_f.csv` a data frame containing all species and the total amount of pollen deposited multiplied by the frequency of each pollinator visiting each plant species.
 
-- `perfomance_masculina.csv` a data frame containing all species and the total amount of pollen exported multiplied by the frequency of each pollinator visiting each plant species.
+- `rede_eficacia_m.csv` a data frame containing all species and the total amount of pollen exported multiplied by the frequency of each pollinator visiting each plant species.
 
 - `z_score_bee.csv` a data frame containing z score for bees in all networks
 
@@ -37,15 +37,17 @@ analysis and visualization of results. The code is written in R language.
 The script sequence to reproduce the workflow is indicated by the numbers at
 the beginning of the name of the script file
 
-- `1_analysis_Demo.Rmd` analysis to investigate the patterns of pollen deposition by distinct pollinators on different _Chamaecrista_ species, grouped by functional roles. Then, plot the network using only pollen deposition as interaction currency.
+- `1_analysis_Deposition.Rmd` analysis to investigate the patterns of pollen deposition by distinct pollinators on different _Chamaecrista_ species, grouped by functional roles. Then, plot the network using only pollen deposition as interaction currency.
 
-- `2_analysis_Expo.Rmd` analysis to investigate the patterns of pollen exportation (how many pollen grains were taken from the anthers after a visit) by distinct pollinators on different _Chamaecrista_ species, grouped by functional roles. Then, plot the network using only pollen export as interaction currency.
+- `2_analysis_Exportation.Rmd` analysis to investigate the patterns of pollen exportation (how many pollen grains were taken from the anthers after a visit) by distinct pollinators on different _Chamaecrista_ species, grouped by functional roles. Then, plot the network using only pollen export as interaction currency.
 
 - `3_analysis_DepoExpoRation.qmd` comparison of the relation between pollen deposition and pollen exportation for the pairwise interactions between pollinators and _Chamaecrista_ species. Pollinators were classified into functional groups to facilitate interpretation.
 
 - `4_networks.R` code to generate the networks based on visitation frequency, pollen deposition, female perfomance (pollen deposition multiplied by frequency), pollen exportation and male perfomance (pollen export multiplied by frequency). In this script, we also calculated network metrics to compare the structure of distinct networks.
 
 - `5_cz_species_role.R` code used to compare species role in the distinct networks using C&Z metrics.
+
+- `6_New_analysis_030425_review.R` this code contains all the analysis, output tables and networks used in the paper.
 
 ### Figures
 

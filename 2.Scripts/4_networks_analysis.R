@@ -2,13 +2,6 @@
 ##################Network Comparisons #######################
 #############################################################
 
-library(bipartite)
-library(iNEXT)
-library(vegan)
-library(ggplot2)
-library(igraph)
-library("RColorBrewer")
-
 # Script for network comparisons 
 #(frequency, deposition, removal, performance) 
 
@@ -75,8 +68,8 @@ safe_plotweb <- function(mat, file = NULL, width = 12, height = 10,
                          group_colors = c(
                            flow_buzz = "#63077D",
                            ant_buzz  = "#e72881",
-                           theft     = "#1C796F",
-                           robber    = "#FF6A00"
+                           theft     = "#FF6A00",
+                           robber    = "#1C796F"
                          ),
                          col.low = "#999999", # plantas
                          bor.col.low = "#000000",
@@ -158,10 +151,10 @@ message("Loaded pollinator functional groups from dados_obs_group.csv (",
 # Load networks
 # ---------------------------
 rede_freq <- read_network("1.RawData/rede_frequencia.csv", sep = ",")
-rede_deposicao <- read_network("1.RawData/rede_deposicao3.csv", sep = ";")
+rede_deposicao <- read_network("1.RawData/rede_deposicao.csv", sep = ";")
 rede_performance_f <- read_network("1.RawData/rede_eficacia_f.csv", sep = ",")
-rede_remocao <- read_network("1.RawData/rede_remocao7.txt", sep = "\t")  
-rede_performance_m <- read_network("1.RawData/performace_masculina.csv", sep = ";", dec=",") 
+rede_remocao <- read_network("1.RawData/rede_remocao.txt", sep = "\t")  
+rede_performance_m <- read_network("1.RawData/rede_eficacia_m.csv", sep = ";", dec=",") 
 
 # Quick sanity checks (prints)
 message("Dimensions — rede_freq: ", paste(dim(rede_freq), collapse = " x "))

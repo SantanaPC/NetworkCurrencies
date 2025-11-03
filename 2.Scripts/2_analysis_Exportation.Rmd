@@ -167,7 +167,7 @@ And we can visualize this variation in pollen deposition for each functional gro
 
 ```{r Network Analysis for Pollen Export}
 
-rede_remocao = read.table("1.RawData/rede_remocao7.txt", header = TRUE) #pollen export metric = mean number of pollen removed from the anthers on each interaction
+rede_remocao = read.table("1.RawData/rede_remocao.txt", header = TRUE) #pollen export metric = mean number of pollen removed from the anthers on each interaction
 
 plotweb(rede_remocao)
 plotweb(rede_remocao, text.rot=90, col.low="#999999", col.high="#000000", bor.col.high= "#999999", bor.col.low="#000000", bor.col.interaction="#333333", col.interaction="#666666") #muda as cores da rede
@@ -178,7 +178,7 @@ And we can combine the frequency of visits with the total amount of pollen grain
 
 ```{r Combination of currencies to build the effectiveness network}
 
-rede_performace_m = read.csv2("1.RawData/performace_masculina.csv", header = TRUE, row.names = 1)#efficacy metric= mean total amount of pollen exported x interaction frequency
+rede_performace_m = read.csv2("1.RawData/rede_eficacia_m.csv", header = TRUE, row.names = 1)#efficacy metric= mean total amount of pollen exported x interaction frequency
 
 plotweb(rede_performace_m)
 plotweb(rede_performace_m, text.rot=90, col.low="#999999", col.high="#000000", bor.col.high= "#999999", bor.col.low="#000000", bor.col.interaction="#333333", col.interaction="#666666") #muda as cores da rede
